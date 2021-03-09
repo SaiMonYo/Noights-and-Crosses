@@ -13,6 +13,8 @@ ORANGE = (255, 69 ,0)
 GREY  = ( 30, 30, 30)
 
 '''
+# representing in string or 1D array
+# easier using 2D
  X | O |
 ---|---|---
    | X |
@@ -43,7 +45,8 @@ class grid():
         self.res = self.w // 3
 
         self.count = 0
-                      
+
+        # change to False if AI to go first         
         self.crossToGo = True
 
         pygame.font.init()
@@ -93,7 +96,6 @@ class grid():
             return True
         return False
     
-
     def game_over(self):
         for i in range(3):
             # vertical
@@ -109,29 +111,12 @@ class grid():
         if self.board[2][0] == self.board[1][1] == self.board[0][2] != ' ':
             return self.board[2][0]
 
-        # still spaces
-        for i in range(3):
-            if ' ' in self.board[i]:
-                return False
-        # tie
-        return None
+        # no more valid moves or the game is a tie
+        if len(self.get_valid_moves()) == 0:
+            return 'tie'
+        
 
-
-    def board_eval(self):
-        result = self.game_over()
-        # not finished
-        if result != False:
-            # tie
-            if result == None:
-                return 0
-            else:
-                # o win
-                if result == 'o':
-                    return -math.inf
-                # x win
-                elif result == 'x':
-                    return math.inf
-        return 0
+        
 
 
     def get_valid_moves(self):
@@ -141,120 +126,78 @@ class grid():
             for j, x in enumerate(y):
                 if x == ' ':
                     moves.append((i, j))
-                    #if (i, j) == (0, 2):
-                        #print("Being Gened")
+        
         return moves
 
 
-    def minimax(self, depth, alpha, beta, isMaximiser):
-        # debugging
-        self.count +=1
-        # getting valid moved
-        possibleMoves = self.get_valid_moves()
-        # getting evaluation of the board
-        value = self.board_eval()
+    def minimax(self, depth, maximiser):
+        score = self.game_over()
+        # if recusrsion hasnt made it to bottom
+        if score != None:
+            if score == 'x':
+                # multiplying by depth to prioritise winning faster
+                return 100 * depth
+            elif score == 'o':
+                return -100 * depth
+            return 0
 
-        # if weve gone to bottom of the depth or one of the people have won
-        if depth == 0 or value == -math.inf or value == math.inf:
-            # returning value
-            return value
-
-        # if x
-        if isMaximiser:
-            # anything good for x becomes best move after 1 iteration
-            maxEval = -math.inf
-            for move in possibleMoves:
+        moves = self.get_valid_moves()
+        if maximiser:
+            bestScore = -math.inf
+            for move in moves:
                 # make the move
                 self.board[move[0]][move[1]] = 'x'
                 # change goes
                 self.crossToGo = not self.crossToGo
                 # evaluates the recusive score
-                eval = self.minimax(depth - 1, alpha, beta, False)
+                evaluation = self.minimax(depth - 1, False)
                 # undo move
                 self.board[move[0]][move[1]] = ' '
                 # changes turn
                 self.crossToGo = not self.crossToGo
 
-                # reassigns max eval
-                if eval >= maxEval:
-                    maxEval = eval
+                bestScore = max(evaluation, bestScore)
+            return bestScore
 
-                # alpha beta pruning
-                if alpha >= eval:
-                    alpha = eval
-                if beta <= alpha:
-                    break
-                
-            return maxEval
-
-        
         else:
-            minEval = math.inf
-            # goes through possible moves
-            for move in possibleMoves:
-                # makes move
+            bestScore = math.inf
+            for move in moves:
+                # make the move
                 self.board[move[0]][move[1]] = 'o'
-                # changes turn
+                # change goes
                 self.crossToGo = not self.crossToGo
-                # gets recusive score
-                eval = self.minimax(depth - 1, alpha, beta, True)
-                # undoes move
+                # evaluates the recusive score
+                evaluation = self.minimax(depth - 1, True)
+                # undo move
                 self.board[move[0]][move[1]] = ' '
                 # changes turn
                 self.crossToGo = not self.crossToGo
 
-                # reassigning min value
-                if eval <= minEval:
-                    minEval = eval
-
-                #alpha beta pruning
-                if beta <= eval:
-                    beta = eval
-                if beta <= alpha:
-                    break
-                
-            return minEval
-
-
+                bestScore = min(evaluation, bestScore)
+            return bestScore
 
     def make_best_move(self):
-        # highest possible
+        # gets all valid moves
+        moves = self.get_valid_moves()
+        # setting the bestscore infinitely high so all scores will be lower
         bestScore = math.inf
-        # get all valid moves
-        possibleMoves = self.get_valid_moves()
-        # set best move to be the firstt move
-        bestMove = possibleMoves[0]
-
-        #goes through valid moves
-        for move in possibleMoves:
-            # makes move
+        # going through valid moves
+        for move in moves:
+            #making the move
             self.board[move[0]][move[1]] = 'o'
-            # changes turn
+            # changing the go
             self.crossToGo = not self.crossToGo
-            # gets minimax of each move
-            eval = self.minimax(10, -math.inf, math.inf, True)
-            # debugging
-            print(eval)
-            # undoes move
+            # getting score
+            score = self.minimax(10, True)
+            # undoing move
             self.board[move[0]][move[1]] = ' '
-            # changes turn
+            # changing turn back
             self.crossToGo = not self.crossToGo
-            # gets best move
-            if eval <= bestScore:
-                bestScore = eval
+            # checking if score is better than previous best
+            if score < bestScore:
                 bestMove = move
-        # debugging
-        print(self.count)
-
-
-        # actually makes move
+                bestScore = score
+        # makes the move which is the bes tmove
         self.board[bestMove[0]][bestMove[1]] = 'o'
+        # changes turn
         self.crossToGo = not self.crossToGo
-                    
-        
-        
-
-        
-            
-        
-        
