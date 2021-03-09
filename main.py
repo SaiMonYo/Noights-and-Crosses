@@ -31,15 +31,10 @@ grid = engine.grid(win)
 running = True
 
 while running:
-    result = grid.game_over()
-
-    if result != False:
-        if result == None:
-            print("Tie")
-        else:
-            print(f"{result} - wins!")
+    over = grid.game_over()
+    if over != None:
+        print("Its a TIE!") if over == 'tie' else print(f"{over.title()} WON!")
         break
-
     if not grid.crossToGo:
         grid.make_best_move()
     
